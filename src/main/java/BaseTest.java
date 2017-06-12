@@ -1,16 +1,17 @@
+import com.google.common.base.Function;
 import org.openqa.selenium.*;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.Select;
+import org.openqa.selenium.support.ui.Wait;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class BaseTest {
@@ -40,7 +41,7 @@ public class BaseTest {
     }
 
     @Test(dependsOnMethods = "checkListOfBt", description = "create new BT")
-    public void createNewBt() {
+    public void createNewBt() throws InterruptedException {
         Date date = new Date();
         Calendar calendar = Calendar.getInstance();
         String projectName = "ENRC-TRD";
@@ -74,28 +75,46 @@ public class BaseTest {
                 .sendKeys(destinationCity);
         driver.findElement(By.xpath("//textarea[@name='destinationAddress']"))
                 .sendKeys(destinationAddress);
+        driver.findElement(By.xpath("//textarea[@id='description']"))
+                .sendKeys(description);
         driver.findElement(By.xpath("//input[@class='textfield textfieldDigit textfieldAmount' and @name='estimatedBudget']"))
                 .sendKeys(estimatedBudget.toString());
         driver.findElement(By.xpath("//input[@id='plannedStartDate_ui']"))
                 .sendKeys(plannedStartDate);
         driver.findElement(By.xpath("//input[@id='plannedEndDate_ui']"))
                 .sendKeys(plannedEndDate);
-        driver.findElement(By.xpath("//textarea[@id='description']"))
-                .sendKeys(description);
-        driver.findElement(By.xpath("//*[@id='ticketsRequired']"))
-                .sendKeys(Keys.ENTER);
-        WebElement tickets = driver.findElement(By.xpath("//*[@id='ticketsRequired']"));
-        Actions actions1 = new Actions(driver);
-        actions1.moveToElement(tickets).click().perform();
+//        driver.findElement(By.xpath("//*[@id='ticketsRequired']"))
+//                .sendKeys(Keys.ENTER);
+//        WebElement tickets = driver.findElement(By.xpath("//*[@id='ticketsRequired']"));
+//        Actions actions1 = new Actions(driver);
+//        actions1.moveToElement(tickets).click().perform();
 
 
 //        if ( !driver.findElement(By.xpath("//*[@id='ticketsRequired']")).isSelected() ){
 //            driver.findElement(By.xpath("//*[@id='ticketsRequired']")).click();
 //        }
         // Click by Save Changes button
+//        WebElement saveButton = driver.findElement(By.xpath("//div[@id='toolbarBottom']//div[@id='saveButton']/button"));
+//        Actions actions2 = new Actions(driver);
+//        actions2.moveToElement(saveButton).click().perform();
+
+//        WebElement collapse = driver.findElement(By.xpath("//span[contains(@onclick, 'collapseFieldDescription')]"));
+//        Actions actions3 = new Actions(driver);
+//        actions3.moveToElement(collapse).click().perform();
+//
+//        WebElement saveButton = driver.findElement(By.xpath("//*[@id='saveButton']/button"));
+//        Actions actions2 = new Actions(driver);
+//        actions2.moveToElement(saveButton).click().perform();
+//        List<WebElement> saveButtons = driver.findElements(By.xpath("//*[@id='saveButton']/button"));
+//        saveButtons.get(0).click();
+        Thread.sleep(10000);
         WebElement saveButton = driver.findElement(By.xpath("//div[@id='toolbarBottom']//div[@id='saveButton']/button"));
         Actions actions2 = new Actions(driver);
         actions2.moveToElement(saveButton).click().perform();
+
+//        WebElement element = driver.findElement(By.xpath("//div[@id='toolbarBottom']//div[@id='saveButton']/button"));
+//        JavascriptExecutor executor = (JavascriptExecutor)driver;
+//        executor.executeScript("arguments[0].click()", element);
 
     }
 
@@ -106,11 +125,23 @@ public class BaseTest {
 
     @Test(dependsOnMethods = "modifyBt", description = "logout from CTC")
     public void logoutCTC(){
-        WebElement logoutButton = driver.findElement(By.xpath("//a[@href='logout.do']"));
-        logoutButton.click();
-        Alert alert = driver.switchTo().alert();
-        System.out.println(alert.getText());
-        alert.accept();
+//        Wait<WebDriver> wait = new FluentWait<WebDriver>(driver)
+//                .withTimeout(30, TimeUnit.SECONDS)
+//                .pollingEvery(5, TimeUnit.SECONDS)
+//                .ignoring(java.util.NoSuchElementException.class);
+//
+//        WebElement logoutButton = wait.until(new Function<WebDriver, WebElement>() {
+//            public WebElement apply(WebDriver webDriver) {
+//                return driver.findElement(By.xpath("//a[@href='logout.do']"));
+//            }
+//        });
+//        logoutButton.click();
+
+//        WebElement logoutButton = driver.findElement(By.xpath("//a[@href='logout.do']"));
+//        logoutButton.click();
+//        Alert alert = driver.switchTo().alert();
+//        System.out.println(alert.getText());
+//        alert.accept();
     }
 
     @BeforeClass
@@ -120,7 +151,8 @@ public class BaseTest {
         driver = new FirefoxDriver();
         driver.manage().timeouts().pageLoadTimeout(15, TimeUnit.SECONDS);
         driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
-        driver.manage().window().maximize();
+//        driver.manage().window().maximize();
+        driver.manage().window().setSize(new Dimension(1600, 900));
         baseUrl = "https://tst1.epm-ctc.projects.epam.com/";
         driver.get(baseUrl + "/login.do?logout=true&tz=GMT%2B06:00");
         WebElement user = driver.findElement(By.xpath("//input[@name='username']"));
