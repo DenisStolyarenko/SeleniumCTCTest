@@ -2,9 +2,7 @@ import com.google.common.base.Function;
 import org.openqa.selenium.*;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.support.ui.FluentWait;
-import org.openqa.selenium.support.ui.Select;
-import org.openqa.selenium.support.ui.Wait;
+import org.openqa.selenium.support.ui.*;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -15,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class BaseTest {
+    private static final int WAIT_FOR_ELEMENT_TIMEOUT_SECONDS = 20;
     private final String BUSINESS_TRIP_LOCATION = "/businesstrip/list.do";
     private static final DateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     private static final DateFormat inputFormat = new SimpleDateFormat("MM/dd/yy");
@@ -36,12 +35,11 @@ public class BaseTest {
     @Test(priority = 0, description = "check opening the list of Bussiness Trips")
     public void checkListOfBt() {
         driver.get(baseUrl + BUSINESS_TRIP_LOCATION);
-        driver.manage().timeouts().pageLoadTimeout(30, TimeUnit.SECONDS);
-        driver.manage().timeouts().implicitlyWait(20, TimeUnit.SECONDS);
+
     }
 
     @Test(dependsOnMethods = "checkListOfBt", description = "create new BT")
-    public void createNewBt() throws InterruptedException {
+    public void createNewBt() {
         Date date = new Date();
         Calendar calendar = Calendar.getInstance();
         String projectName = "ENRC-TRD";
@@ -52,6 +50,8 @@ public class BaseTest {
         Integer estimatedBudget = new Random().nextInt(100000);
         String plannedStartDate = "06/11/17"; // исправить на текущую дату inputFormat.format(date)
         String plannedEndDate = "10/11/17"; // исправить на текущую дату плюс 7 дней
+        By COLLAPSE_LOCATOR = By.xpath("//span[text()='Collapse']");
+        Actions actions = new Actions(driver);
 
         driver.findElement(By.xpath("//input[@title='Create New Business Trip Request']"))
                 .click();
@@ -77,14 +77,25 @@ public class BaseTest {
                 .sendKeys(destinationAddress);
         driver.findElement(By.xpath("//textarea[@id='description']"))
                 .sendKeys(description);
+        if ( !driver.findElement(By.xpath("//*[@id='ticketsRequired']")).isSelected() ){
+            driver.findElement(By.xpath("//*[@id='ticketsRequired']")).click();
+        }
+        if ( !driver.findElement(By.xpath("//*[@id='carRequired']")).isSelected() ){
+            driver.findElement(By.xpath("//*[@id='carRequired']")).click();
+        }
         driver.findElement(By.xpath("//input[@class='textfield textfieldDigit textfieldAmount' and @name='estimatedBudget']"))
                 .sendKeys(estimatedBudget.toString());
+//        waitForElementEnabled(COLLAPSE_LOCATOR);
+//        actions.moveToElement(driver.findElement(COLLAPSE_LOCATOR)).click().perform();
+
         driver.findElement(By.xpath("//input[@id='plannedStartDate_ui']"))
                 .sendKeys(plannedStartDate);
         driver.findElement(By.xpath("//input[@id='plannedEndDate_ui']"))
                 .sendKeys(plannedEndDate);
-//        driver.findElement(By.xpath("//*[@id='ticketsRequired']"))
-//                .sendKeys(Keys.ENTER);
+//        String textDate = driver.findElement(By.xpath("//input[@id='plannedEndDate_ui']")).getAttribute("value").toString();
+//        System.out.println(textDate);
+        //Проверить что обязательные поля заполнены
+//
 //        WebElement tickets = driver.findElement(By.xpath("//*[@id='ticketsRequired']"));
 //        Actions actions1 = new Actions(driver);
 //        actions1.moveToElement(tickets).click().perform();
@@ -93,6 +104,16 @@ public class BaseTest {
 //        if ( !driver.findElement(By.xpath("//*[@id='ticketsRequired']")).isSelected() ){
 //            driver.findElement(By.xpath("//*[@id='ticketsRequired']")).click();
 //        }
+
+
+    }
+
+    @Test(dependsOnMethods = "createNewBt", description = "Save BT")
+    public void SaveItem(){
+        By SAVE_LOCATOR = By.xpath("//*[@id='saveButton']/button");
+        Actions actions = new Actions(driver);
+        waitForElementEnabled(SAVE_LOCATOR);
+        actions.moveToElement(driver.findElement(SAVE_LOCATOR)).click().perform();
         // Click by Save Changes button
 //        WebElement saveButton = driver.findElement(By.xpath("//div[@id='toolbarBottom']//div[@id='saveButton']/button"));
 //        Actions actions2 = new Actions(driver);
@@ -107,18 +128,17 @@ public class BaseTest {
 //        actions2.moveToElement(saveButton).click().perform();
 //        List<WebElement> saveButtons = driver.findElements(By.xpath("//*[@id='saveButton']/button"));
 //        saveButtons.get(0).click();
-        Thread.sleep(10000);
-        WebElement saveButton = driver.findElement(By.xpath("//div[@id='toolbarBottom']//div[@id='saveButton']/button"));
-        Actions actions2 = new Actions(driver);
-        actions2.moveToElement(saveButton).click().perform();
+//        Thread.sleep(10000);
+//        WebElement saveButton = driver.findElement(By.xpath("//div[@id='toolbarBottom']//div[@id='saveButton']/button"));
+//        Actions actions2 = new Actions(driver);
+//        actions2.moveToElement(saveButton).click().perform();
 
 //        WebElement element = driver.findElement(By.xpath("//div[@id='toolbarBottom']//div[@id='saveButton']/button"));
 //        JavascriptExecutor executor = (JavascriptExecutor)driver;
 //        executor.executeScript("arguments[0].click()", element);
-
     }
 
-    @Test(dependsOnMethods = "createNewBt", description = "modify BT")
+    @Test(dependsOnMethods = "SaveItem", description = "modify BT")
     public void modifyBt() {
 
     }
@@ -149,19 +169,18 @@ public class BaseTest {
         String userName = "dst";
         String pwdName = "0";
         driver = new FirefoxDriver();
-        driver.manage().timeouts().pageLoadTimeout(15, TimeUnit.SECONDS);
-        driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+        driver.manage().timeouts().pageLoadTimeout(30, TimeUnit.SECONDS);
+        driver.manage().timeouts().implicitlyWait(20, TimeUnit.SECONDS);
 //        driver.manage().window().maximize();
         driver.manage().window().setSize(new Dimension(1600, 900));
         baseUrl = "https://tst1.epm-ctc.projects.epam.com/";
         driver.get(baseUrl + "/login.do?logout=true&tz=GMT%2B06:00");
-        WebElement user = driver.findElement(By.xpath("//input[@name='username']"));
-        user.sendKeys(userName);
-        WebElement pwd = driver.findElement(By.xpath("//input[@name='password']"));
-        pwd.sendKeys(pwdName);
-        WebElement sighin = driver.findElement(By.xpath("//input[@name='Login']"));
-        sighin.click();
-        driver.manage().timeouts().pageLoadTimeout(15, TimeUnit.SECONDS);
+        driver.findElement(By.xpath("//input[@name='username']"))
+                .sendKeys(userName);
+        driver.findElement(By.xpath("//input[@name='password']"))
+                .sendKeys(pwdName);
+        driver.findElement(By.xpath("//input[@name='Login']"))
+                .click();
     }
 
     @AfterClass
@@ -169,5 +188,8 @@ public class BaseTest {
 //        driver.quit();
     }
 
+    protected void waitForElementEnabled(By locator) {
+        new WebDriverWait(driver, WAIT_FOR_ELEMENT_TIMEOUT_SECONDS).until(ExpectedConditions.elementToBeClickable(locator));
+    }
 
 }
