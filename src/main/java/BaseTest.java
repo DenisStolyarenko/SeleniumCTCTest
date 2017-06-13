@@ -1,5 +1,6 @@
 import com.google.common.base.Function;
 import org.openqa.selenium.*;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.*;
@@ -109,11 +110,19 @@ public class BaseTest {
     }
 
     @Test(dependsOnMethods = "createNewBt", description = "Save BT")
-    public void SaveItem(){
+    public void SaveItem() throws InterruptedException {
         By SAVE_LOCATOR = By.xpath("//*[@id='saveButton']/button");
-        Actions actions = new Actions(driver);
-        waitForElementEnabled(SAVE_LOCATOR);
-        actions.moveToElement(driver.findElement(SAVE_LOCATOR)).click().perform();
+        By formLocker = By.xpath("//*[@id='formLocker']");
+//        Actions actions = new Actions(driver);
+//        waitForElementEnabled(SAVE_LOCATOR);
+//        actions.moveToElement(driver.findElement(SAVE_LOCATOR)).click().perform();
+
+//        fluentWait(SAVE_LOCATOR);
+//        waitForFormLockerDisappear(driver, formLocker);
+        Thread.sleep(20000);
+        waitForElementClickable(driver, driver.findElement(SAVE_LOCATOR));
+        Thread.sleep(20000);
+        driver.findElement(SAVE_LOCATOR).click();
         // Click by Save Changes button
 //        WebElement saveButton = driver.findElement(By.xpath("//div[@id='toolbarBottom']//div[@id='saveButton']/button"));
 //        Actions actions2 = new Actions(driver);
@@ -190,6 +199,66 @@ public class BaseTest {
 
     protected void waitForElementEnabled(By locator) {
         new WebDriverWait(driver, WAIT_FOR_ELEMENT_TIMEOUT_SECONDS).until(ExpectedConditions.elementToBeClickable(locator));
+    }
+
+    public WebElement fluentWait(final By locator) {
+        Wait<WebDriver> wait = new FluentWait<WebDriver>(driver)
+                .withTimeout(30, TimeUnit.SECONDS)
+                .pollingEvery(5, TimeUnit.SECONDS)
+                .ignoring(NoSuchElementException.class);
+
+        WebElement foo = wait.until(new Function<WebDriver, WebElement>() {
+            public WebElement apply(WebDriver driver) {
+                return driver.findElement(locator);
+            }
+        });
+
+        return  foo;
+    };
+
+    public static void waitForElementClickable (WebDriver driver, WebElement element){
+        FluentWait<WebDriver> wait = new WebDriverWait(driver, 5);
+        wait.until((ExpectedCondition<Object>) driver1 -> {
+            try {
+                element.click();
+                return true;
+            } catch (WebDriverException e) {
+                return false;
+            }
+        });
+    }
+
+    private boolean pageStartsLoading(int timeout, WebDriver driver, String locator) {
+        WebElement element = null;
+        By loadingIndicatorLocator = By.xpath(locator);
+        WebDriverWait wait = new WebDriverWait(driver, timeout);
+        element = wait.until(ExpectedConditions.visibilityOfElementLocated(loadingIndicatorLocator));
+        return element != null;
+    }
+
+    private void waitUntilPageStopsLoading(int timeout, WebDriver driver, String locator) {
+        By loadingIndicatorLocator = By.xpath(locator);
+        WebDriverWait wait = new WebDriverWait(driver, timeout);
+        wait.until(ExpectedConditions.invisibilityOfElementLocated(loadingIndicatorLocator));
+    }
+
+    public static void waitForElementDisappear(WebElement element, WebDriver driver) {
+        try {
+            element.getText();
+            element.getAttribute("id");
+        } catch (NoSuchElementException e) {
+            return;
+        }
+        FluentWait<WebDriver> wait = new WebDriverWait(driver, 30);
+        wait.ignoring(TimeoutException.class);
+        wait.ignoring(StaleElementReferenceException.class);
+        wait.until(ExpectedConditions.not(ExpectedConditions.visibilityOf(element)));
+    }
+
+
+    public static void waitForFormLockerDisappear(WebDriver driver,By locator) {
+        WebElement element = driver.findElement(locator);
+        waitForElementDisappear(element, driver);
     }
 
 }
